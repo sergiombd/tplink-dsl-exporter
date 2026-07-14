@@ -1,4 +1,4 @@
-# tp-link-dsl-exporter
+# tplink-dsl-exporter
 
 A Prometheus exporter for TP-Link DSL modem/routers (Archer VR-series and
 similar) that expose only a **telnet CLI**. It logs in over telnet, scrapes the
