@@ -41,7 +41,7 @@ docker run -d --name dsl-exporter -p 9908:9908 \
 ```
 
 Images are published to GHCR for `linux/amd64` and `linux/arm64` (so it runs on
-a Raspberry Pi next to your router). Pin a release with `:v0.1.0` instead of
+a Raspberry Pi next to your router). Pin a release with `:0.1.0` instead of
 `:latest`.
 
 ---
@@ -147,7 +147,8 @@ All via environment variables (see `.env.example`):
 Versioned with SemVer. Pushing a `vX.Y.Z` tag triggers CI to build and publish a
 multi-arch image to GHCR:
 
-- `ghcr.io/sergiombd/tplink-dsl-exporter:vX.Y.Z` and `:X.Y` — pinned
+- `ghcr.io/sergiombd/tplink-dsl-exporter:X.Y.Z` and `:X.Y` — pinned (the `v` is
+  stripped from the tag, e.g. tag `v0.1.0` → image `0.1.0`)
 - `:latest` — newest release
 - `:edge` — latest `main` (may be unstable)
 
