@@ -3,11 +3,13 @@
 # dashboard and alerts, see ./example/docker-compose.yml.
 services:
   exporter:
+    image: ghcr.io/sergiombd/tplink-dsl-exporter:latest
     build: ./exporter
-    image: dsl-exporter:latest
     container_name: dsl-exporter
     restart: unless-stopped
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       ROUTER_HOST: ${ROUTER_HOST:-192.168.1.1}
       ROUTER_TELNET_PORT: ${ROUTER_TELNET_PORT:-23}

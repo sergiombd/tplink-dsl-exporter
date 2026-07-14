@@ -1,5 +1,9 @@
 # tplink-dsl-exporter
 
+[![CI](https://github.com/sergiombd/tplink-dsl-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/sergiombd/tplink-dsl-exporter/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/sergiombd/tplink-dsl-exporter?sort=semver)](https://github.com/sergiombd/tplink-dsl-exporter/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A Prometheus exporter for TP-Link DSL modem/routers (Archer VR-series and
 similar) that expose only a **telnet CLI**. It logs in over telnet, scrapes the
 DSL line and PPPoE/WAN status, and serves them at `/metrics` — so you can graph
@@ -28,7 +32,22 @@ line or the PPPoE setup.
 
 ## Run it
 
-The exporter needs a `.env` with your router's telnet password:
+**Prebuilt image (easiest — no clone needed):**
+
+```bash
+docker run -d --name dsl-exporter -p 9908:9908 \
+  -e ROUTER_HOST=192.168.1.1 -e ROUTER_PASSWORD=admin \
+  ghcr.io/sergiombd/tplink-dsl-exporter:latest
+```
+
+Images are published to GHCR for `linux/amd64` and `linux/arm64` (so it runs on
+a Raspberry Pi next to your router). Pin a release with `:v0.1.0` instead of
+`:latest`.
+
+---
+
+If you'd rather build from source, the exporter needs a `.env` with your
+router's telnet password:
 
 ```bash
 cp .env.example .env      # then edit ROUTER_PASSWORD / ROUTER_HOST
@@ -87,7 +106,8 @@ All via environment variables (see `.env.example`):
 ## Metrics
 
 **Availability:** `dsl_up`, `dsl_scrape_duration_seconds`,
-`dsl_scrape_errors_total`, `dsl_reconnects_total`.
+`dsl_scrape_errors_total`, `dsl_reconnects_total`,
+`dsl_exporter_build_info{version}`.
 
 **DSL line** (`adsl show info`): `dsl_line_status`,
 `dsl_downstream_rate_kbps`, `dsl_upstream_rate_kbps`,
@@ -121,6 +141,23 @@ All via environment variables (see `.env.example`):
 - **Field mapping is model-specific.** Values like SNR margin/attenuation/power
   are reported in tenths of a dB and divided by 10 here; other TP-Link models may
   label fields differently. `LOG_LEVEL=DEBUG` shows what's parsed.
+
+## Releases
+
+Versioned with SemVer. Pushing a `vX.Y.Z` tag triggers CI to build and publish a
+multi-arch image to GHCR:
+
+- `ghcr.io/sergiombd/tplink-dsl-exporter:vX.Y.Z` and `:X.Y` — pinned
+- `:latest` — newest release
+- `:edge` — latest `main` (may be unstable)
+
+The running version is reported by `dsl_exporter_build_info{version="..."}` and
+logged at startup. To cut a release, bump `__version__` in `exporter/exporter.py`
+(and `version` in `exporter/pyproject.toml`), then:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
 
 ## License
 
