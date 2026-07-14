@@ -1,0 +1,61 @@
+# Optional end-to-end demo stack: the exporter wired to Prometheus + Grafana with
+# a provisioned diagnostic dashboard and alert rules. This is NOT required to use
+# the exporter -- point your own Prometheus at it instead (see the top-level
+# README). Run from this directory:  docker compose up -d --build
+services:
+  exporter:
+    build: ../exporter
+    image: dsl-exporter:latest
+    container_name: dsl-exporter
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      ROUTER_HOST: ${ROUTER_HOST:-192.168.1.1}
+      ROUTER_TELNET_PORT: ${ROUTER_TELNET_PORT:-23}
+      ROUTER_PASSWORD: ${ROUTER_PASSWORD:-admin}
+      ROUTER_USERNAME: ${ROUTER_USERNAME:-}
+      SCRAPE_INTERVAL: ${SCRAPE_INTERVAL:-20}
+      EXPORTER_PORT: 9908
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "9908:9908"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: dsl-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=90d"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - exporter
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: dsl-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:
+  grafana-data:

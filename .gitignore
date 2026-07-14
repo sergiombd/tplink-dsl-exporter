@@ -1,6 +1,9 @@
 # Secrets: holds the router password
 .env
 
+# Local compose overrides
+docker-compose.override.yml
+
 # uv / Python
 .venv/
 __pycache__/
