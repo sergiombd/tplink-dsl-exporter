@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: dsl-router
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: dsl-exporter
+    # The exporter refreshes its cache every SCRAPE_INTERVAL (default 20s);
+    # scraping a bit faster is fine, values just repeat between refreshes.
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["exporter:9908"]
+        labels:
+          instance: tp-link-dsl
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

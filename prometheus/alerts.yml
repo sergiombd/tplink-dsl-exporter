@@ -1,0 +1,134 @@
+groups:
+  - name: dsl-availability
+    rules:
+      - alert: ExporterDown
+        expr: up{job="dsl-exporter"} == 0 or dsl_up == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DSL exporter cannot reach the router"
+          description: "The exporter has failed to scrape {{ $labels.instance }} for 2m. Router may be rebooting or telnet is unreachable."
+
+      - alert: DSLLineDown
+        expr: dsl_line_status == 0
+        for: 30s
+        labels:
+          severity: critical
+          layer: dsl
+        annotations:
+          summary: "DSL line is DOWN (no sync)"
+          description: "The DSL modem has lost synchronization. This is a layer-1 (copper/line) event, not PPPoE."
+
+      - alert: PPPoEDisconnected
+        expr: pppoe_connection_status == 0
+        for: 30s
+        labels:
+          severity: critical
+          layer: pppoe
+        annotations:
+          summary: "PPPoE session {{ $labels.name }} is disconnected"
+          description: "PPPoE is down. Check whether the DSL line is still up (dsl_line_status) to tell a session drop from a line drop."
+
+  - name: dsl-drops
+    rules:
+      # --- The key diagnostic distinction -------------------------------- #
+      # PPPoE session reset WITHOUT a DSL re-sync => the copper line was fine
+      # and only the PPPoE session dropped. That points at PPPoE/keepalive/ISP
+      # /credential/MTU issues rather than line quality. This is the signature
+      # of a misconfigured PPPoE setup.
+      - alert: PPPoEDropWhileLineUp
+        expr: resets(pppoe_uptime_seconds[10m]) > 0 and resets(dsl_line_uptime_seconds[10m]) == 0
+        for: 0m
+        labels:
+          severity: warning
+          layer: pppoe
+        annotations:
+          summary: "PPPoE {{ $labels.name }} dropped while the DSL line stayed up"
+          description: "The PPPoE session reset but the DSL line did NOT re-sync. The fault is above the line: LCP keepalive, idle timeout, MTU/MRU, auth, or the ISP dropping the session. Check pppoe_last_connection_error_info."
+
+      # Both counters reset together => the modem re-trained (line event).
+      - alert: DSLResync
+        expr: resets(dsl_line_uptime_seconds[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          layer: dsl
+        annotations:
+          summary: "DSL line re-synchronized (re-train)"
+          description: "dsl_line_uptime_seconds reset, i.e. the modem lost and regained sync. Correlate with dsl_downstream_snr_margin_db just before the event."
+
+      - alert: FrequentDSLResyncs
+        expr: resets(dsl_line_uptime_seconds[1h]) >= 3
+        for: 0m
+        labels:
+          severity: critical
+          layer: dsl
+        annotations:
+          summary: "DSL line re-synced {{ $value }} times in the last hour"
+          description: "Repeated re-trains indicate an unstable line (noise, poor SNR margin, faulty wiring/filter)."
+
+      - alert: FrequentPPPoEDrops
+        expr: resets(pppoe_uptime_seconds[1h]) >= 3
+        for: 0m
+        labels:
+          severity: critical
+          layer: pppoe
+        annotations:
+          summary: "PPPoE {{ $labels.name }} dropped {{ $value }} times in the last hour"
+          description: "Repeated PPPoE session drops. If the line is stable, this is almost certainly a PPPoE/keepalive/ISP problem."
+
+  - name: dsl-quality
+    rules:
+      - alert: LowDownstreamSNRMargin
+        expr: dsl_downstream_snr_margin_db < 6
+        for: 5m
+        labels:
+          severity: warning
+          layer: dsl
+        annotations:
+          summary: "Downstream SNR margin low ({{ $value }} dB)"
+          description: "Below ~6 dB the line becomes prone to errors and re-trains. Healthy is >=6 dB, comfortable is >=9 dB."
+
+      - alert: CriticalDownstreamSNRMargin
+        expr: dsl_downstream_snr_margin_db < 3
+        for: 1m
+        labels:
+          severity: critical
+          layer: dsl
+        annotations:
+          summary: "Downstream SNR margin critically low ({{ $value }} dB)"
+          description: "A drop/re-sync is imminent at this margin."
+
+      - alert: SyncRateFarBelowAttainable
+        expr: dsl_downstream_max_rate_kbps > 0 and (dsl_downstream_rate_kbps / dsl_downstream_max_rate_kbps) < 0.7
+        for: 15m
+        labels:
+          severity: info
+          layer: dsl
+        annotations:
+          summary: "Downstream sync rate well below attainable"
+          description: "Syncing at {{ $value | humanizePercentage }} of the attainable rate; the line could carry more, suggesting a conservative profile or SNR headroom being reserved."
+
+      - alert: PPPoELastErrorNotNone
+        expr: pppoe_last_connection_error_info{error!="ERROR_NONE"} == 1
+        for: 1m
+        labels:
+          severity: warning
+          layer: pppoe
+        annotations:
+          summary: "PPPoE {{ $labels.name }} reports error {{ $labels.error }}"
+          description: "The router's last connection error is not ERROR_NONE. This is a direct clue to why PPPoE dropped."
+
+  - name: dsl-config-hints
+    rules:
+      # Not a failure, a configuration smell worth surfacing while diagnosing.
+      - alert: PPPoELCPEchoRetryDisabled
+        expr: pppoe_lcp_echo_retry == 0
+        for: 10m
+        labels:
+          severity: info
+          layer: pppoe
+        annotations:
+          summary: "PPPoE {{ $labels.name }} has LCP echo retry set to 0"
+          description: "With no LCP echo retries the router may tear the session down on a single missed keepalive, or fail to detect a half-dead session. If you see PPPoEDropWhileLineUp, this is a prime suspect."

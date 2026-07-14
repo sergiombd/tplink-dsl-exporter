@@ -1,0 +1,292 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["dsl", "router", "pppoe"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "DSL / PPPoE Diagnostics",
+  "uid": "dsl-diagnostics",
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "DSL Line",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "dsl_line_status", "refId": "A" } ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [ { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 }, "1": { "text": "UP", "color": "green", "index": 1 } } } ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] },
+          "color": { "mode": "thresholds" }
+        }, "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" }
+    },
+    {
+      "type": "stat",
+      "title": "PPPoE",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "pppoe_connection_status", "refId": "A" } ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [ { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 }, "1": { "text": "CONNECTED", "color": "green", "index": 1 } } } ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] },
+          "color": { "mode": "thresholds" }
+        }, "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" }
+    },
+    {
+      "type": "stat",
+      "title": "Downstream SNR margin",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "dsl_downstream_snr_margin_db", "refId": "A" } ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dB",
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 3 }, { "color": "green", "value": 6 } ] },
+          "color": { "mode": "thresholds" }
+        }, "overrides": []
+      },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "type": "stat",
+      "title": "Downstream sync rate",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "dsl_downstream_rate_kbps", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "unit": "Kbits", "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "type": "stat",
+      "title": "DSL sync uptime",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "dsl_line_uptime_seconds", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "fixed", "fixedColor": "purple" } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "type": "stat",
+      "title": "PPPoE uptime",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "pppoe_uptime_seconds", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "fixed", "fixedColor": "purple" } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Uptime counters — a reset (sawtooth drop to ~0) marks a disconnect",
+      "description": "If the PPPoE line drops to zero but the DSL line keeps climbing, only the PPPoE session dropped (PPPoE/ISP/config). If both drop together, the DSL line re-synced (copper/noise).",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "dsl_line_uptime_seconds", "legendFormat": "DSL sync uptime", "refId": "A" },
+        { "expr": "pppoe_uptime_seconds", "legendFormat": "PPPoE uptime ({{name}})", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "spanNulls": false, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["min", "max"] }, "tooltip": { "mode": "multi", "sort": "none" } }
+    },
+
+    {
+      "type": "state-timeline",
+      "title": "Connection state",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "dsl_line_status", "legendFormat": "DSL line", "refId": "A" },
+        { "expr": "pppoe_connection_status", "legendFormat": "PPPoE {{name}}", "refId": "B" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [ { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 }, "1": { "text": "UP", "color": "green", "index": 1 } } } ],
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] }
+        }, "overrides": []
+      },
+      "options": { "mergeValues": true, "showValue": "never", "rowHeight": 0.9, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "SNR margin (dB) — below 6 dB is unstable",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "dsl_downstream_snr_margin_db", "legendFormat": "downstream", "refId": "A" },
+        { "expr": "dsl_upstream_snr_margin_db", "legendFormat": "upstream", "refId": "B" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dB",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 5, "showPoints": "never",
+            "thresholdsStyle": { "mode": "dashed" } },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 3 }, { "color": "green", "value": 6 } ] }
+        }, "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Downstream: sync rate vs attainable",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "dsl_downstream_rate_kbps", "legendFormat": "sync rate", "refId": "A" },
+        { "expr": "dsl_downstream_max_rate_kbps", "legendFormat": "attainable", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Kbits", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Line attenuation (dB)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "dsl_downstream_attenuation_db", "legendFormat": "downstream", "refId": "A" },
+        { "expr": "dsl_upstream_attenuation_db", "legendFormat": "upstream", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "dB", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 5, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Transmit power (dBm)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "dsl_downstream_power_dbm", "legendFormat": "downstream", "refId": "A" },
+        { "expr": "dsl_upstream_power_dbm", "legendFormat": "upstream", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "dBm", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 5, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Drops in the last hour (rolling)",
+      "description": "resets() counts how many times each uptime counter fell back to zero within the trailing hour.",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "resets(dsl_line_uptime_seconds[1h])", "legendFormat": "DSL re-syncs / h", "refId": "A" },
+        { "expr": "resets(pppoe_uptime_seconds[1h])", "legendFormat": "PPPoE drops / h", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "lineWidth": 1, "fillOpacity": 60, "showPoints": "never" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+    },
+
+    {
+      "type": "stat",
+      "title": "LCP echo retry",
+      "gridPos": { "h": 3, "w": 3, "x": 12, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "pppoe_lcp_echo_retry", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [ { "color": "orange", "value": null }, { "color": "green", "value": 1 } ] }, "color": { "mode": "thresholds" } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "type": "stat",
+      "title": "LCP echo interval (s)",
+      "gridPos": { "h": 3, "w": 3, "x": 15, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "pppoe_lcp_echo_interval_seconds", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "options": { "colorMode": "none", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "type": "stat",
+      "title": "Idle disconnect (s)",
+      "gridPos": { "h": 3, "w": 3, "x": 18, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "pppoe_idle_disconnect_time", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "options": { "colorMode": "none", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "type": "stat",
+      "title": "Last PPPoE error",
+      "gridPos": { "h": 3, "w": 6, "x": 12, "y": 37 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "pppoe_last_connection_error_info == 1", "format": "table", "instant": true, "refId": "A" } ],
+      "transformations": [ { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true, "instance": true, "job": true, "monitor": true, "name": true } } } ],
+      "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "ERROR_NONE": { "color": "green", "index": 0 } } } ], "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "color": "orange", "value": null } ] } }, "overrides": [] },
+      "options": { "colorMode": "background", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^error$/", "values": false } }
+    },
+    {
+      "type": "stat",
+      "title": "Bitswap / SRA",
+      "gridPos": { "h": 3, "w": 3, "x": 18, "y": 37 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "dsl_bitswap_enabled", "legendFormat": "Bitswap", "refId": "A" },
+        { "expr": "dsl_sra_enabled", "legendFormat": "SRA", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "0": { "text": "Off" }, "1": { "text": "On" } } } ] }, "overrides": [] },
+      "options": { "colorMode": "none", "graphMode": "none", "textMode": "value_and_name", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "type": "stat",
+      "title": "Scrape health",
+      "gridPos": { "h": 3, "w": 3, "x": 21, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "dsl_up", "refId": "A" } ],
+      "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "0": { "text": "FAIL", "color": "red" }, "1": { "text": "OK", "color": "green" } } } ], "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } }, "overrides": [] },
+      "options": { "colorMode": "background", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+
+    {
+      "type": "table",
+      "title": "PPPoE connection details",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 41 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "pppoe_connection_info", "format": "table", "instant": true, "refId": "A" } ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true, "instance": true, "job": true, "monitor": true } } }
+      ],
+      "options": { "showHeader": true }
+    },
+    {
+      "type": "table",
+      "title": "DSL line details",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 41 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [ { "expr": "dsl_line_info", "format": "table", "instant": true, "refId": "A" } ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true, "instance": true, "job": true, "monitor": true } } }
+      ],
+      "options": { "showHeader": true }
+    }
+  ]
+}

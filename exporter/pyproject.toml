@@ -1,0 +1,11 @@
+[project]
+name = "dsl-exporter"
+version = "0.1.0"
+description = "Prometheus exporter for TP-Link DSL router telnet stats"
+requires-python = ">=3.11"
+dependencies = [
+    "prometheus-client>=0.20",
+]
+
+[tool.uv]
+package = false

@@ -1,0 +1,8 @@
+# Secrets: holds the router password
+.env
+
+# uv / Python
+.venv/
+__pycache__/
+*.pyc
+exporter/uv.lock
