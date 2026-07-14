@@ -27,7 +27,6 @@ import logging
 import os
 import re
 import socket
-import threading
 import time
 
 from prometheus_client import (
@@ -36,6 +35,8 @@ from prometheus_client import (
     Info,
     start_http_server,
 )
+
+__version__ = "0.1.0"
 
 # --------------------------------------------------------------------------- #
 # Configuration (all via environment)
@@ -207,6 +208,8 @@ m_up = g("dsl_up", "1 if the last router scrape succeeded, else 0")
 m_scrape_duration = g("dsl_scrape_duration_seconds", "Duration of the last router scrape")
 m_scrape_errors = g("dsl_scrape_errors_total", "Cumulative count of scrapes that failed even after a reconnect+retry")
 m_reconnects = g("dsl_reconnects_total", "Cumulative telnet reconnects (router recycled the idle session; recovered in-cycle)")
+m_build = Info("dsl_exporter_build", "Exporter build information", registry=REG)
+m_build.info({"version": __version__})
 
 # DSL line (from `adsl show info`)
 m_line_status = g("dsl_line_status", "DSL line status (1=Up, 0=Down)")
@@ -396,7 +399,8 @@ class Scraper:
 
 def main():
     log.info(
-        "starting DSL exporter: router=%s:%s listen=:%s interval=%ss",
+        "starting DSL exporter v%s: router=%s:%s listen=:%s interval=%ss",
+        __version__,
         ROUTER_HOST,
         ROUTER_PORT,
         LISTEN_PORT,
